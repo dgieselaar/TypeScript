@@ -129,7 +129,6 @@ namespace ts.tracing {
 
     // Used for "Complete" (ph:"X") events
     const completeEvents: { phase: Phase, name: string, args?: object, time: number }[] = [];
-    
 
     const stopwatches: Record<string, any> = {};
 
@@ -140,7 +139,7 @@ namespace ts.tracing {
 
     function stopTimer ( phase:string, name:string ) {
         const metricName = `typescript.${phase}.${name}`;
-        stopwatches[metricName] = agent.getOrCreateTimer(metricName)?.end();
+        stopwatches[metricName]?.end();
         delete stopwatches[metricName];
     }
 
