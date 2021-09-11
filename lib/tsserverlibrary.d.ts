@@ -9915,6 +9915,7 @@ declare namespace ts.server {
         private suppressDiagnosticEvents?;
         private eventHandler;
         private readonly noGetErrOnBackgroundUpdate?;
+        protected agent: any;
         constructor(opts: SessionOptions);
         private sendRequestCompletedEvent;
         private addPerformanceData;

@@ -14,6 +14,17 @@ namespace ts.server {
         write(data: string, encoding: string): boolean;
     }
 
+    // @ts-expect-error
+    const agent: typeof import("elastic-apm-node") = require("elastic-apm-node");
+
+    agent.start({
+        serviceName: "typescript",
+        serverUrl: "http://localhost:8200",
+        active: true,
+        transactionSampleRate: 1.0,
+        logLevel: "off",
+    });
+
     const net: {
         connect(options: { port: number }, onConnect?: () => void): NodeSocket
     } = require("net");

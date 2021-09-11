@@ -701,7 +701,12 @@ namespace ts.server {
         private eventHandler: ProjectServiceEventHandler | undefined;
         private readonly noGetErrOnBackgroundUpdate?: boolean;
 
+        protected agent: any;
+
         constructor(opts: SessionOptions) {
+
+            this.agent = require("elastic-apm-node");
+
             this.host = opts.host;
             this.cancellationToken = opts.cancellationToken;
             this.typingsInstaller = opts.typingsInstaller;
@@ -2887,7 +2892,12 @@ namespace ts.server {
         public executeCommand(request: protocol.Request): HandlerResponse {
             const handler = this.handlers.get(request.command);
             if (handler) {
-                return this.executeWithRequestId(request.seq, () => handler(request));
+                const stopwatch = this.agent.getOrCreateTimer("typescript." + request.command).start();
+                return this.executeWithRequestId(request.seq, () => {
+                    const response = handler(request);
+                    stopwatch.end();
+                    return response;
+                });
             }
             else {
                 this.logger.msg(`Unrecognized JSON command:${stringifyIndented(request)}`, Msg.Err);
