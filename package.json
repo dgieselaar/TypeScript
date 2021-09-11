@@ -127,5 +127,8 @@
     },
     "volta": {
         "node": "14.15.5"
+    },
+    "dependencies": {
+        "elastic-apm-node": "git+https://github.com/dgieselaar/apm-agent-nodejs.git#a7c6d04"
     }
 }

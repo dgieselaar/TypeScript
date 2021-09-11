@@ -11,6 +11,15 @@ namespace ts { // eslint-disable-line one-namespace-per-file
         type Mode = "project" | "build" | "server";
 
         let fs: typeof import("fs");
+        // @ts-expect-error
+        const agent: typeof import("elastic-apm-node") = require("elastic-apm-node");
+
+        agent.start({
+            serviceName: "typescript",
+            serverUrl: "http://localhost:8200",
+            active: true,
+            transactionSampleRate: 1.0,
+        });
 
         let traceCount = 0;
         let traceFd = 0;
@@ -80,6 +89,13 @@ namespace ts { // eslint-disable-line one-namespace-per-file
 
         /** Stops tracing for the in-progress project and dumps the type catalog. */
         export function stopTracing() {
+
+            console.log('flushing')
+
+            agent.flush()
+
+            console.log('done flushing')
+            
             Debug.assert(tracing, "Tracing is not in progress");
             Debug.assert(!!typeCatalog.length === (mode !== "server")); // Have a type catalog iff not in server mode
 
@@ -119,6 +135,8 @@ namespace ts { // eslint-disable-line one-namespace-per-file
 
         const eventStack: { phase: Phase, name: string, args?: Args, time: number, separateBeginAndEnd: boolean }[] = [];
 
+        const stopwatches: Record<string, any> = {};
+
         /**
          * @param separateBeginAndEnd - used for special cases where we need the trace point even if the event
          * never terminates (typically for reducing a scenario too big to trace to one that can be completed).
@@ -129,16 +147,28 @@ namespace ts { // eslint-disable-line one-namespace-per-file
             if (separateBeginAndEnd) {
                 writeEvent("B", phase, name, args);
             }
+            const metricName = `typescript.${phase}.${name}`;
+            stopwatches[metricName] = agent.getOrCreateTimer(metricName).start();
             eventStack.push({ phase, name, args, time: 1000 * timestamp(), separateBeginAndEnd });
         }
         export function pop() {
             Debug.assert(eventStack.length > 0);
+            const event = eventStack[eventStack.length - 1];
+            const metricName = `typescript.${event.phase}.${event.name}`;
+            stopwatches[metricName]?.end();
+            delete stopwatches[metricName];
+
             writeStackEvent(eventStack.length - 1, 1000 * timestamp());
             eventStack.length--;
         }
         export function popAll() {
             const endTime = 1000 * timestamp();
             for (let i = eventStack.length - 1; i >= 0; i--) {
+                const event = eventStack[i];
+                const metricName = `typescript.${event.phase}.${event.name}`;
+                stopwatches[metricName]?.end();
+                delete stopwatches[metricName];
+
                 writeStackEvent(i, endTime);
             }
             eventStack.length = 0;
