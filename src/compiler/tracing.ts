@@ -9,6 +9,16 @@ namespace ts.tracing {
     let legendPath: string | undefined;
     const legend: TraceRecord[] = [];
 
+    // @ts-expect-error
+    const agent: typeof import("elastic-apm-node") = require("elastic-apm-node");
+
+    agent.start({
+        serviceName: "typescript",
+        serverUrl: "http://localhost:8200",
+        active: true,
+        transactionSampleRate: 1.0,
+    });
+
     /** Starts tracing for the given project (unless the `fs` module is unavailable). */
     export function startTracing(configFilePath: string | undefined, traceDir: string, isBuildMode: boolean) {
         Debug.assert(!traceFd, "Tracing already started");
@@ -63,6 +73,8 @@ namespace ts.tracing {
             Debug.assert(!fs, "Tracing is not in progress");
             return;
         }
+        
+        agent.flush();
 
         Debug.assert(fs);
 
@@ -116,8 +128,24 @@ namespace ts.tracing {
 
     // Used for "Complete" (ph:"X") events
     const completeEvents: { phase: Phase, name: string, args?: object, time: number }[] = [];
+    
+
+    const stopwatches: Record<string, any> = {};
+
+    function startTimer ( phase:string, name:string ) {
+        const metricName = `typescript.${phase}.${name}`;
+        stopwatches[metricName] = agent.getOrCreateTimer(metricName).start();
+    }
+
+    function stopTimer ( phase:string, name:string ) {
+        const metricName = `typescript.${phase}.${name}`;
+        stopwatches[metricName] = agent.getOrCreateTimer(metricName)?.end();
+        delete stopwatches[metricName];
+    }
+
     export function push(phase: Phase, name: string, args?: object) {
         if (!traceFd) return;
+        startTimer(phase, name);
         completeEvents.push({ phase, name, args, time: 1000 * timestamp() });
     }
     export function pop() {
@@ -125,6 +153,7 @@ namespace ts.tracing {
         Debug.assert(completeEvents.length > 0);
         const { phase, name, args, time } = completeEvents.pop()!;
         const dur = 1000 * timestamp() - time;
+        stopTimer(phase, name);
         writeEvent("X", phase, name, args, `"dur":${dur}`, time);
     }
 
