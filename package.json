@@ -129,5 +129,7 @@
         "source-map-support": false,
         "inspector": false
     },
-    "dependencies": {}
+    "dependencies": {
+        "elastic-apm-node": "github:dgieselaar/apm-agent-nodejs#a7c6d04"
+    }
 }
