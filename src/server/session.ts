@@ -2890,9 +2890,9 @@ namespace ts.server {
         }
 
         public executeCommand(request: protocol.Request): HandlerResponse {
+            const stopwatch = this.agent.getOrCreateTimer("typescript." + request.command).start();
             const handler = this.handlers.get(request.command);
             if (handler) {
-                const stopwatch = this.agent.getOrCreateTimer("typescript." + request.command).start();
                 return this.executeWithRequestId(request.seq, () => {
                     const response = handler(request);
                     stopwatch.end();
@@ -2900,6 +2900,7 @@ namespace ts.server {
                 });
             }
             else {
+                stopwatch.end();
                 this.logger.msg(`Unrecognized JSON command:${stringifyIndented(request)}`, Msg.Err);
                 this.doOutput(/*info*/ undefined, CommandNames.Unknown, request.seq, /*success*/ false, `Unrecognized JSON command: ${request.command}`);
                 return { responseRequired: false };
