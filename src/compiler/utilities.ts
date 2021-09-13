@@ -6979,4 +6979,42 @@ namespace ts {
             return bindParentToChildIgnoringJSDoc(child, parent) || bindJSDoc(child);
         }
     }
+
+    export function initAgent(logger: (msg: string) => void) {
+        try {
+            const agent = require("elastic-apm-node");
+
+            let packageJson;
+
+            try {
+                packageJson = require("package.json");
+            }
+            catch (err) {
+                logger(err);
+                packageJson = {};
+            }
+
+            const configOptions = {
+                active: false,
+                environment: "development",
+                logUncaughtExceptions: false,
+                globalLabels: {},
+                serviceName: "typescript",
+                serverUrl: "https://38b80fbd79fb4c91bae06b4642d4d093.apm.us-east-1.aws.cloud.es.io",
+                secretToken: "ZQHYvrmXEx04ozge8F",
+                centralConfig: false,
+                metricsInterval: "30s",
+                captureSpanStackTraces: false,
+                transactionSampleRate: 1.0,
+                breakdownMetrics: false,
+                ...packageJson?.elasticApm?.ts,
+                logLevel: "off"
+            };
+
+            agent.start(configOptions);
+        }
+        catch (error) {
+            logger(error);
+        }
+    }
 }

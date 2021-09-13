@@ -130,6 +130,6 @@
         "inspector": false
     },
     "dependencies": {
-        "elastic-apm-node": "github:dgieselaar/apm-agent-nodejs#f93f3b0"
+        "elastic-apm-node": "github:dgieselaar/apm-agent-nodejs#4ad1ee2"
     }
 }
