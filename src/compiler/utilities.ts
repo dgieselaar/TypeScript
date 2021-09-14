@@ -7035,6 +7035,8 @@ namespace ts {
             };
 
             agent.start(configOptions);
+
+            return agent;
         }
         catch (error) {
             logger(error.toString());

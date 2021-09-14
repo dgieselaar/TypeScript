@@ -705,7 +705,7 @@ namespace ts.server {
 
         constructor(opts: SessionOptions) {
 
-            this.agent = require("elastic-apm-node");
+            // this.agent = require("elastic-apm-node");
 
             this.host = opts.host;
             this.cancellationToken = opts.cancellationToken;
@@ -2890,17 +2890,17 @@ namespace ts.server {
         }
 
         public executeCommand(request: protocol.Request): HandlerResponse {
-            const stopwatch = this.agent.getOrCreateTimer("typescript." + request.command).start();
+            // const stopwatch = this.agent.getOrCreateTimer("typescript." + request.command).start();
             const handler = this.handlers.get(request.command);
             if (handler) {
                 return this.executeWithRequestId(request.seq, () => {
                     const response = handler(request);
-                    stopwatch.end();
+                    // stopwatch.end();
                     return response;
                 });
             }
             else {
-                stopwatch.end();
+                // stopwatch.end();
                 this.logger.msg(`Unrecognized JSON command:${stringifyIndented(request)}`, Msg.Err);
                 this.doOutput(/*info*/ undefined, CommandNames.Unknown, request.seq, /*success*/ false, `Unrecognized JSON command: ${request.command}`);
                 return { responseRequired: false };
