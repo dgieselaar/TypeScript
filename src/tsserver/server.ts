@@ -815,6 +815,9 @@ namespace ts.server {
 
     const logger = createLogger();
 
+
+    logger.msg("Initializing agent...");
+
     initAgent((msg: string) => {
         logger.msg(msg, Msg.Err);
     });

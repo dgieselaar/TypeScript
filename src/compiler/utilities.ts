@@ -6981,17 +6981,40 @@ namespace ts {
     }
 
     export function initAgent(logger: (msg: string) => void) {
+
+        function getUserPackageJsonPath() {
+
+            const Path: typeof import("path") = require("path");
+            const Fs: typeof import("fs") = require("fs");
+
+            for(const path of module.paths) {
+                try {
+                    const possiblePkgJsonLocation = Path.join(Path.dirname(path), "package.json");
+                    Fs.accessSync(possiblePkgJsonLocation, Fs.constants.F_OK);
+                    return possiblePkgJsonLocation;
+                }
+                //eslint-disable-next-line no-empty
+                catch (err) {}
+            }
+
+            throw new Error("Could not locate package.json");
+        }
+
         try {
             const agent = require("elastic-apm-node");
+
+            if (agent.isStarted()) {
+                return;
+            }
 
             let packageJson;
 
             try {
-                packageJson = require("package.json");
+                const packageJsonPath = getUserPackageJsonPath();
+                packageJson = require(packageJsonPath);
             }
             catch (err) {
-                logger(err);
-                packageJson = {};
+                logger(err.toString());
             }
 
             const configOptions = {
@@ -7014,7 +7037,7 @@ namespace ts {
             agent.start(configOptions);
         }
         catch (error) {
-            logger(error);
+            logger(error.toString());
         }
     }
 }
