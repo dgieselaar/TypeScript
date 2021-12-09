@@ -815,10 +815,6 @@ namespace ts.server {
 
     const logger = createLogger();
 
-    // initAgent((msg: string) => {
-    //     logger.msg(msg, Msg.Err);
-    // });
-
     const sys = <ServerHost>ts.sys;
     const nodeVersion = getNodeMajorVersion();
     // use watchGuard process on Windows when node version is 4 or later
@@ -987,6 +983,10 @@ namespace ts.server {
     logger.info(`Arguments: ${process.argv.join(" ")}`);
     logger.info(`Platform: ${os.platform()} NodeVersion: ${nodeVersion} CaseSensitive: ${sys.useCaseSensitiveFileNames}`);
     logger.info(`ServerMode: ${serverMode} syntaxOnly: ${syntaxOnly} hasUnknownServerMode: ${unknownServerMode}`);
+
+    initAgent((msg: string) => {
+        logger.msg(msg, Msg.Err);
+    });
 
     const ioSession = new IOSession();
     process.on("uncaughtException", err => {

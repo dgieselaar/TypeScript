@@ -6982,36 +6982,30 @@ namespace ts {
 
     export function initAgent(logger: (msg: string) => void) {
 
-        function getUserPackageJsonPath() {
-
-            const Path: typeof import("path") = require("path");
-            const Fs: typeof import("fs") = require("fs");
-
-            for(const path of module.paths) {
-                try {
-                    const possiblePkgJsonLocation = Path.join(Path.dirname(path), "package.json");
-                    Fs.accessSync(possiblePkgJsonLocation, Fs.constants.F_OK);
-                    return possiblePkgJsonLocation;
-                }
-                //eslint-disable-next-line no-empty
-                catch (err) {}
-            }
-
-            throw new Error("Could not locate package.json");
-        }
-
         try {
             const agent = require("elastic-apm-node");
+            const Path: typeof import("path") = require("path");
 
             if (agent.isStarted()) {
                 return;
             }
 
-            let packageJson;
+            let config = {};
 
             try {
-                const packageJsonPath = getUserPackageJsonPath();
-                packageJson = require(packageJsonPath);
+                const apmConfigLoader = require("@kbn/apm-config-loader");
+
+                const rootDir = Path.resolve(Path.join("../../", module.paths[0]));
+
+                logger("rootDir: " + rootDir + ", " + Path.resolve(rootDir, "./config/kibana.dev.yml") + ", " + Path.resolve(process.cwd()));
+
+                const argv = ["--config", Path.resolve(rootDir, "./config/kibana.dev.yml"), "--config", Path.resolve(rootDir, "./config/kibana.yml") ];
+
+                apmConfigLoader.loadConfiguration(argv, rootDir, false);
+
+                config = apmConfigLoader.getConfiguration("tsserver");
+
+                logger("Loaded shared config:" + JSON.stringify(config));
             }
             catch (err) {
                 logger(err.toString());
@@ -7030,9 +7024,11 @@ namespace ts {
                 captureSpanStackTraces: false,
                 transactionSampleRate: 1.0,
                 breakdownMetrics: false,
-                ...packageJson?.elasticApm?.ts,
+                ...config,
                 logLevel: "off"
             };
+
+            logger("Starting agent:" + JSON.stringify(configOptions));
 
             agent.start(configOptions);
 
